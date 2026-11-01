@@ -8,6 +8,7 @@ const BOOK = {
   intro: '兔子和乌龟的赛跑，分成六幕立在纸上。翻开书，每一幕都可以点按钮让它动起来。',
   accent: '#e5603f',
   cardIcon: { art: 'carrot' },
+  coverMusic: 'gentle',
   cover: {
     color: '#3f8a4f',
     sky: ['#93d2ea', '#fff0d4'],
@@ -24,7 +25,7 @@ const BOOK = {
   },
   scenes: [
     {
-      title: '一场赌约', btn: '举旗开赛', hint: '松鼠裁判举起小旗，比赛要开始了。', palette: 'morning',
+      title: '一场赌约', btn: '举旗开赛', music: 'playful', hint: '松鼠裁判举起小旗，比赛要开始了。', palette: 'morning',
       text: '森林里住着一只兔子，跑得飞快，最爱拿这件事出来显摆。这天它碰见慢吞吞的乌龟，笑得直不起腰，“你这么慢，爬到河边天都黑啦。”乌龟抬起头，慢悠悠地说，“那咱们比一比？”',
       items: [
         { id: 'tree', art: 'tree', d: 1.55, x: -.22, h: 1.8, sway: .008 },
@@ -51,7 +52,7 @@ const BOOK = {
       ],
     },
     {
-      title: '嗖地一下', btn: '起跑', hint: '兔子一眨眼就跑没影了。', palette: 'day', decor: { birds: true },
+      title: '嗖地一下', btn: '起跑', music: 'adventure', hint: '兔子一眨眼就跑没影了。', palette: 'day', decor: { birds: true },
       floor: { path: [2.05, 2.6] },
       text: '松鼠把小旗一挥，兔子嗖地窜了出去，身后扬起一溜尘土。乌龟这才迈出第一步。篱笆上的小鸟叽叽喳喳，都说这场比赛没什么好看的了。',
       items: [
@@ -76,7 +77,7 @@ const BOOK = {
       ],
     },
     {
-      title: '树下打个盹', btn: '日头西斜', hint: '太阳慢慢往西边挪。', palette: 'noon',
+      title: '树下打个盹', btn: '日头西斜', music: 'sleepy', hint: '太阳慢慢往西边挪。', palette: 'noon',
       text: '跑到半山腰，兔子回头一看，连乌龟的影子都找不着。“歇一会儿也能赢。”它抱着一根胡萝卜往大树底下一躺，没多久就打起了呼噜。',
       items: [
         { id: 'sun', art: 'sun', d: 1.12, x: -.3, y: 1.5, h: .42, ay: .5, tint: false, idle: [{ type: 'spin', speed: .25 }] },
@@ -96,7 +97,7 @@ const BOOK = {
       ],
     },
     {
-      title: '一步一步', btn: '继续爬', hint: '嘘，别吵醒兔子。', palette: 'afternoon',
+      title: '一步一步', btn: '继续爬', music: 'sneaky', hint: '嘘，别吵醒兔子。', palette: 'afternoon',
       floor: { path: [2.05, 2.6], stream: .48 },
       text: '乌龟一直没停。它爬过小石桥，路过大树的时候，兔子还睡得正香。乌龟没去吵它，轻手轻脚地往前爬，一步，又一步。',
       items: [
@@ -116,7 +117,7 @@ const BOOK = {
       ],
     },
     {
-      title: '冲过终点', btn: '冲线', hint: '乌龟冲线，彩纸飞起来。', palette: 'festive', decor: { bunting: true },
+      title: '冲过终点', btn: '冲线', music: 'tense', hint: '乌龟冲线，彩纸飞起来。', palette: 'festive', decor: { bunting: true },
       floor: { path: [1.85, 2.4], finish: 1.95 },
       text: '终点线就在眼前，大伙儿都屏住了呼吸。乌龟伸长脖子往前一探，红绸带啪地断开了。森林里一下子欢呼起来，谁也没想到，第一个到的会是它。',
       items: [
@@ -136,11 +137,12 @@ const BOOK = {
         { t: .75, dur: .7, type: 'to', target: 'ribR', to: { rot: 1.3 }, ease: 'back' },
         { t: .75, type: 'confetti', at: { d: 1.85, x: 0, y: .9 } },
         { t: .75, type: 'sound', preset: 'pop' },
+        { t: .75, type: 'music', mood: 'triumph' },
         { t: .8, dur: 2.6, type: 'hop', target: ['frog', 'bird0', 'bird1', 'squ', 'hedge'], amp: .09, speed: 9 },
       ],
     },
     {
-      title: '兔子醒啦', btn: '叫醒兔子', hint: '慢一点没关系，一直走就好。', palette: 'dusk',
+      title: '兔子醒啦', btn: '叫醒兔子', music: 'night', hint: '慢一点没关系，一直走就好。', palette: 'dusk',
       text: '月亮爬上来的时候，兔子才揉着眼睛醒过来。它一路狂奔到终点，奖牌早就挂在了乌龟的脖子上。乌龟笑眯眯地说，“我走得慢，可我一直没停下呀。”',
       items: [
         { id: 'moon', art: 'moon', d: 1.12, x: .32, y: 1.0, h: .42, ay: .5, tint: false },

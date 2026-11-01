@@ -2,12 +2,14 @@
 """Build a single-file pop-up carousel book.
 
 Usage:
-    python3 build.py BOOK.js OUT.html [--images DIR]
+    python3 build.py BOOK.js OUT.html [--images DIR] [--music DIR]
 
 BOOK.js   a JavaScript file that defines `const BOOK = {...}` (and optionally
           extra `ART.name = (args) => ({ dw, dh, draw(c) { ... } })` entries).
 --images  folder of .png/.webp/.jpg files; each file becomes `img:<filename
           without extension>` usable as an `art` name in BOOK.
+--music   folder of .mp3/.ogg/.m4a/.wav files; each file becomes `file:<name>`
+          usable as `music` in BOOK (replaces the built-in procedural music).
 Only the Python standard library is used.
 """
 import argparse
@@ -28,6 +30,7 @@ def main() -> int:
     ap.add_argument("book")
     ap.add_argument("out")
     ap.add_argument("--images", default=None)
+    ap.add_argument("--music", default=None)
     a = ap.parse_args()
 
     engine = ENGINE.read_text(encoding="utf-8")
@@ -56,14 +59,29 @@ def main() -> int:
     if missing:
         print("warning: BOOK uses images that were not found: " + ", ".join(sorted(missing)))
 
+    audio = {}
+    if a.music:
+        for p in sorted(pathlib.Path(a.music).iterdir()):
+            if p.suffix.lower() not in (".mp3", ".ogg", ".m4a", ".wav"):
+                continue
+            data = p.read_bytes()
+            total += len(data)
+            mime = {".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".m4a": "audio/mp4", ".wav": "audio/wav"}[p.suffix.lower()]
+            audio[p.stem] = f"data:{mime};base64," + base64.b64encode(data).decode()
+            if len(data) > 1_500_000:
+                print(f"warning: {p.name} is {len(data)//1024} KB; use a 30 to 60 second loop at 64 to 96 kbps")
+    used_a = set(re.findall(r"file:([A-Za-z0-9_\-]+)", cfg))
+    if used_a - set(audio):
+        print("warning: BOOK uses music files that were not found: " + ", ".join(sorted(used_a - set(audio))))
+
     title = re.search(r"title\s*:\s*['\"]([^'\"]+)['\"]", cfg)
-    inject = "const BOOK_IMAGES = " + json.dumps(images) + ";\n" + cfg + "\n"
+    inject = "const BOOK_IMAGES = " + json.dumps(images) + ";\nconst BOOK_AUDIO = " + json.dumps(audio) + ";\n" + cfg + "\n"
     html = engine.replace(PLACEHOLDER, inject)
     html = html.replace("__BOOK_TITLE__", (title.group(1) if title else "Pop-up Book").replace("<", ""))
     out = pathlib.Path(a.out)
     out.write_text(html, encoding="utf-8")
     size = out.stat().st_size
-    print(f"built {out} ({size/1024:.0f} KB, {len(images)} images)")
+    print(f"built {out} ({size/1024:.0f} KB, {len(images)} images, {len(audio)} music files)")
     if size > 12 * 1024 * 1024:
         print("warning: file is over 12 MB; compress the images")
     return 0

@@ -15,11 +15,14 @@
 | `cardIcon` | | 故事卡片右下角和封底的小图标，`{ art, args }` |
 | `fonts` | | `{ title, body }`，Google Fonts 字体名。默认 `ZCOOL KuaiLe` 和 `ZCOOL XiaoWei`（中文）。英文书可用 `Fredoka` 和 `Lora` |
 | `table` | | 桌面木纹底色，默认 `#8a5a3a` |
+| `coverMusic` | | 封面背景音乐，默认 `gentle`，见 `music.md` |
+| `musicVolume` | | 背景音乐音量 0 到 1，默认 .6 |
+| `music` | | 写 `false` 关闭整本书的背景音乐 |
 | `ui` | | 界面文字覆盖，键见下文 |
 | `cover` | | 封面，见下文 |
 | `scenes` | 是 | 4 到 8 幕 |
 
-`ui` 可覆盖的键：`open` `close` `again` `cover` `coverHint` `readerClose` `loading` `coverReader` `prev` `next` `read` `sound`，以及 `actLabel: (no, index, total) => string`。做英文书时全部换成英文。
+`ui` 可覆盖的键：`open` `close` `again` `cover` `coverHint` `readerClose` `loading` `coverReader` `prev` `next` `read` `sound` `music`，以及 `actLabel: (no, index, total) => string`。做英文书时全部换成英文。
 
 ### cover
 
@@ -53,6 +56,7 @@ cover: {
 | `floor` | 地面图案：`{ path: [d0, d1], stream: x, finish: d, snow: true, color, pathColor }` |
 | `back` | `false` 时不自动加远山 |
 | `front` | `false` 时不自动加前景草丛和花边 |
+| `music` | 这一幕的背景音乐：曲风名、`{ mood, bpm, density, root, seed }` 或 `file:文件名`，见 `music.md` |
 | `melody` | 按钮音效的音符频率数组，默认自动生成 |
 | `items` | 场景元素 |
 | `action` | 按钮按下后的动作时间线 |
@@ -155,6 +159,7 @@ cover: {
 | `tint` | 颜色滤镜渐变，不写 target 时作用于整幕和地面 | `to: '#ffd0a0', amount: .7` |
 | `trail` | 跟在目标后面冒尘土 | `every: .17, life: .9, art: 'dust', h: .24` |
 | `confetti` | 一次性撒彩纸 | `at: { d, x, y }`, `colors`, `count` |
+| `music` | 切换这一幕的背景音乐（一次性） | `mood: 'triumph'` 或 `mood: { mood, bpm, density }`，或 `file: '文件名'` |
 | `sound` | 一次性音效 | `preset: 'pop' / 'chime' / 'boing' / 'whoosh' / 'snore'`，或 `notes: [523, 659]` |
 
 `ease` 可选 `linear` `in` `out` `inOut`（默认） `back`（回弹） `bounce`。

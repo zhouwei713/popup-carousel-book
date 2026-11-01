@@ -44,6 +44,10 @@ description: 把任意主题做成一本能转圈翻看的 3D 纸雕立体书网
 
 动作用预设步骤拼，不写代码：`to`（属性补间）、`walk`/`run`（移动加换帧）、`popIn`、`fadeOut`、`hop`、`jump`、`wave`、`shake`、`swap`、`tint`、`trail`（扬尘）、`confetti`（彩纸）、`sound` 等。常驻小动作用 `idle`：`bob`、`sway`、`breathe`、`float`（Zzz 往上飘）、`pulse`（鼾泡）、`twinkle`、`spin`。完整说明见 `references/config.md`。
 
+### 3.5 配背景音乐
+
+每一幕选一种情绪曲风（`music: 'sad'`），再在按钮动作的高潮时刻用 `{ t, type: 'music', mood: 'triumph' }` 切换，和画面的转折对齐。曲风列表、写法和用自己音频文件的方法见 `references/music.md`。默认是浏览器现场合成，不需要文件。
+
 ### 4. 写 book.js
 
 复制 `assets/example-tortoise-hare.js`（完整的六幕示例，几乎用到了所有功能）作为起点，改成新主题。配置项说明在 `references/config.md`。需要自己画专属角色时（例如公主、王子、南瓜马车），参考 `examples/cinderella.js`，里面演示了怎么注册自定义素材、怎么用 `swap` 换装、怎么做室内场景。
@@ -53,6 +57,7 @@ description: 把任意主题做成一本能转圈翻看的 3D 纸雕立体书网
 ```bash
 python3 scripts/build.py book.js 书名.html                 # 代码模式
 python3 scripts/build.py book.js 书名.html --images images/ # 生图模式，images/ 里的 hero.png 在配置里写成 art: 'img:hero'
+python3 scripts/build.py book.js 书名.html --music music/   # 用自己的音乐文件，music/ 里的 ball.mp3 写成 music: 'file:ball'
 ```
 
 只依赖 Python 标准库。

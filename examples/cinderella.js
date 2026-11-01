@@ -141,6 +141,7 @@ const BOOK = {
   intro: '灰姑娘的故事分成六幕立在纸上。翻开书，每一幕都可以点按钮，让南瓜变马车，让大钟敲响十二下。',
   accent: '#c9567f',
   cardIcon: { art: 'slipper' },
+  coverMusic: 'gentle',
   cover: {
     color: '#5d4b8f', trim: '#efd28a', titleColor: '#fff3e6',
     sky: ['#3d3f86', '#f4c6d6'],
@@ -156,7 +157,7 @@ const BOOK = {
   },
   scenes: [
     {
-      title: '灰扑扑的厨房', btn: '扫一扫', hint: '两个姐姐又在使唤她了。',
+      title: '灰扑扑的厨房', btn: '扫一扫', music: 'sad', hint: '两个姐姐又在使唤她了。',
       palette: 'afternoon', sky: ['#c58a5c', '#f2d6ac'], hills: ['#a26a44', '#8c5a3a', '#764a30'], ground: '#c79d72', wash: '', decor: { clouds: 0 }, back: false, front: false,
       text: '从前有个姑娘，妈妈去世以后，继母带着两个姐姐住进了家里。她们把最脏最累的活全推给她，她整天在灶台边扫灰，身上总是灰扑扑的，大家就叫她灰姑娘。',
       items: [
@@ -179,7 +180,7 @@ const BOOK = {
       ],
     },
     {
-      title: '去舞会的晚上', btn: '出发', hint: '只剩她一个人留在家里。', palette: 'afternoon',
+      title: '去舞会的晚上', btn: '出发', music: 'sad', hint: '只剩她一个人留在家里。', palette: 'afternoon',
       floor: { path: [1.95, 2.3] },
       text: '王宫要办一场盛大的舞会。继母和姐姐们穿上新裙子，坐着马车出了门，谁也没问灰姑娘想不想去。家里一下子安静了，灰姑娘坐在门口，忍不住掉下了眼泪。',
       items: [
@@ -203,7 +204,7 @@ const BOOK = {
       ],
     },
     {
-      title: '仙女教母', btn: '变', hint: '南瓜和旧裙子都要变样啦。', palette: 'night', tint: NIGHT_TINT,
+      title: '仙女教母', btn: '变', music: 'magic', hint: '南瓜和旧裙子都要变样啦。', palette: 'night', tint: NIGHT_TINT,
       text: '忽然一阵亮光，仙女教母出现了。“别哭，你也能去舞会。”她挥了挥魔杖，南瓜变成了金色马车，灰姑娘的旧裙子变成了闪闪发亮的礼服。“记住，十二点以前一定要回来。”',
       items: [
         { art: 'moon', d: 1.12, x: -.42, y: 1.65, h: .4, ay: .5, tint: false },
@@ -234,7 +235,7 @@ const BOOK = {
       ],
     },
     {
-      title: '王宫舞会', btn: '跳支舞', hint: '音乐响起来了。', palette: 'night',
+      title: '王宫舞会', btn: '跳支舞', music: { mood: 'waltz', bpm: 112, density: .3 }, hint: '音乐响起来了。', palette: 'night',
       sky: ['#4a3a7a', '#e3a9c8'], hills: ['#b58ac7', '#9b72b5', '#7f5aa0'], ground: '#d9c7ea', tint: '#f0e8fa', decor: { lanterns: true, stars: true, clouds: 0 },
       grass: ['#7fb86a', '#93c97c'], flowerG: '#7fb86a',
       text: '灰姑娘一走进舞厅，所有人都看呆了。王子走过来邀请她跳舞，他们跳了一支又一支，聊得特别开心。两个姐姐站在旁边，怎么也认不出这位漂亮的姑娘是谁。',
@@ -254,11 +255,12 @@ const BOOK = {
         { t: .8, dur: 3, type: 'wave', target: ['cind', 'prince'], amp: .1, speed: 5 },
         { t: .8, dur: 3, type: 'hop', target: ['cind', 'prince'], amp: .04, speed: 5 },
         { t: 1.0, type: 'show', target: ['h1', 'h2'] },
+        { t: 0, type: 'music', mood: { mood: 'waltz', bpm: 150, density: .75 } },
         { t: 0, type: 'sound', notes: [659, 784, 880, 784, 659, 523] },
       ],
     },
     {
-      title: '十二点的钟声', btn: '铛', hint: '魔法快要消失了。', palette: 'night', tint: NIGHT_TINT,
+      title: '十二点的钟声', btn: '铛', music: 'tense', hint: '魔法快要消失了。', palette: 'night', tint: NIGHT_TINT,
       text: '就在这时，大钟敲响了十二下。灰姑娘想起仙女的话，提起裙子就往外跑，慌乱中一只水晶鞋掉在了台阶上。王子追出来，只捡到了这只小小的鞋子。',
       items: [
         { art: 'moon', d: 1.12, x: .4, y: 1.7, h: .38, ay: .5, tint: false },
@@ -272,6 +274,7 @@ const BOOK = {
       ],
       action: [
         { t: 0, dur: .3, type: 'popIn', target: 'dong' },
+        { t: .5, type: 'music', mood: { mood: 'tense', bpm: 160 } },
         { t: 0, dur: 1.4, type: 'shake', target: 'clock', amp: .03, speed: 30 },
         { t: 0, type: 'sound', notes: [392, 392, 392, 392] },
         { t: .5, dur: 1.4, type: 'run', target: 'cind', to: { x: -.85, d: 2.6 }, bobAmp: .05 },
@@ -284,7 +287,7 @@ const BOOK = {
       ],
     },
     {
-      title: '水晶鞋', btn: '试鞋', hint: '这只鞋到底是谁的？', palette: 'spring',
+      title: '水晶鞋', btn: '试鞋', music: 'sneaky', hint: '这只鞋到底是谁的？', palette: 'spring',
       text: '王子带着水晶鞋挨家挨户地找。两个姐姐使劲往里塞脚，怎么也穿不进去。轮到灰姑娘的时候，鞋子刚刚好。王子一眼就认出了她，后来他们幸福地生活在一起。',
       items: [
         { art: 'house', d: 1.5, x: -.3, h: .95 },
@@ -312,6 +315,7 @@ const BOOK = {
         { t: 1.6, dur: 1, type: 'shake', target: ['sisA2', 'sisB2'], amp: .03 },
         { t: 1.6, dur: 2, type: 'hop', target: 'm1', amp: .06, speed: 10 },
         { t: 1.8, type: 'show', target: ['h1', 'h2'] },
+        { t: 1.6, type: 'music', mood: 'triumph' },
       ],
     },
   ],

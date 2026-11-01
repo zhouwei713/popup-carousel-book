@@ -77,6 +77,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .primary{padding:0 14px;font-size:15px}
   .ib{width:34px;height:34px}
   .bar{gap:2px}
+  .ib{width:32px}
 }
 @media (prefers-reduced-motion: reduce){.dots button,.primary{transition:none}}
 </style>
@@ -97,6 +98,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <div class="cap" aria-live="polite"><b id="capTitle"></b><span id="capHint"></span></div>
   <button class="ib" id="readBtn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5c3-1.3 6-1.3 9 .5v13c-3-1.8-6-1.8-9-.5z"/><path d="M21 5.5c-3-1.3-6-1.3-9 .5v13c3-1.8 6-1.8 9-.5z"/></svg></button>
   <button class="ib" id="soundBtn" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="waveA" d="M16.5 8.5a5 5 0 0 1 0 7"/><path id="waveB" d="M19 6a8.5 8.5 0 0 1 0 12"/><path id="muteX" d="M17 9l5 6M22 9l-5 6" style="display:none"/></svg></button>
+  <button class="ib" id="musicBtn" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/><path id="musicX" d="M3 3l18 18" style="display:none"/></svg></button>
   <button class="primary" id="actBtn"></button>
   <button class="ib" id="next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
 </nav>
@@ -609,7 +611,7 @@ const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const W = 3.4, H = 3.7, PX = 240;
 const ZH = ['一', '二', '三', '四', '五', '六', '七', '八'];
 const UI = Object.assign({ open: '打开书', close: '合上书', again: '再来一次', cover: '封面', coverHint: '一本会转圈的纸雕立体书', readerClose: '收起', loading: '正在折纸…',
-  coverReader: '翻开书，每一幕都可以点按钮让它动起来。', actLabel: (no, i, n) => `${no} · 共${ZH[n - 1] || n}幕`, prev: '上一幕', next: '下一幕', read: '读这一幕的故事', sound: '音效开关' }, BOOK.ui || {});
+  coverReader: '翻开书，每一幕都可以点按钮让它动起来。', actLabel: (no, i, n) => `${no} · 共${ZH[n - 1] || n}幕`, prev: '上一幕', next: '下一幕', read: '读这一幕的故事', sound: '音效开关', music: '背景音乐开关' }, BOOK.ui || {});
 const SCN = BOOK.scenes.map((s, i) => {
   const pal = Object.assign({}, PALETTES[s.palette] || PALETTES.day);
   ['sky', 'ground', 'hills', 'tint', 'grass', 'flowerG', 'flowers', 'wash'].forEach(k => { if (s[k] !== undefined) pal[k] = s[k]; });
@@ -874,6 +876,7 @@ function oneShots(S, a) {
   (S.sc.action || []).forEach((st, k) => {
     if (S.fired.has(k) || a < (st.t || 0)) return;
     if (st.type === 'confetti') { S.fired.add(k); spawnConfetti(S, st.at || { d: 1.9, x: 0, y: .9 }); }
+    if (st.type === 'music') { S.fired.add(k); S.musicOverride = normSpec(st.file ? 'file:' + st.file : st.mood, st.seed ?? S.i + 1); if (S.i === cur()) syncMusic(); }
     if (st.type === 'sound') { S.fired.add(k); if (st.notes) st.notes.forEach((f, j) => pluck(f, j * .11, .4)); else SFX[st.preset || 'pop']?.(); }
   });
 }
@@ -943,6 +946,116 @@ const SFX = {
 const PENTA = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568];
 function melody(i) { const m = SCN[i].melody || [0, 1, 2, 4].map(k => PENTA[(k + (i % 4)) % PENTA.length]); m.forEach((f, k) => pluck(f, k * .11, .45)); }
 
+/* ---- background music: procedural moods, or embedded audio files (see references/music.md) ---- */
+const MODES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10], lydian: [0, 2, 4, 6, 7, 9, 11], mixolydian: [0, 2, 4, 5, 7, 9, 10] };
+const MOODS = {
+  gentle:    { bpm: 84,  beats: 4, mode: 'major', root: 60, prog: [0, 3, 4, 0], lead: 'bell', bass: 'soft', pad: true, density: .5, gain: 0.62 },
+  playful:   { bpm: 116, beats: 4, mode: 'major', root: 60, prog: [0, 4, 5, 3], lead: 'pluck', bass: 'bounce', perc: 'tick', density: .7, gain: 1.5 },
+  adventure: { bpm: 108, beats: 4, mode: 'dorian', root: 62, prog: [0, 3, 0, 6], lead: 'pluck', bass: 'bounce', perc: 'drum', density: .65, gain: 1.5 },
+  sneaky:    { bpm: 92,  beats: 4, mode: 'minor', root: 57, prog: [0, 0, 5, 4], lead: 'pizz', bass: 'walk', perc: 'tick', density: .45, staccato: true, gain: 1.7 },
+  sleepy:    { bpm: 66,  beats: 3, mode: 'major', root: 60, prog: [0, 3, 4, 0], lead: 'musicbox', bass: 'soft', pad: true, density: .55, gain: 0.62 },
+  sad:       { bpm: 64,  beats: 4, mode: 'minor', root: 57, prog: [0, 5, 2, 6], lead: 'piano', bass: 'soft', pad: true, density: .35, gain: 0.62 },
+  magic:     { bpm: 88,  beats: 4, mode: 'lydian', root: 62, prog: [0, 1, 0, 4], lead: 'bell', arp: true, pad: true, sparkle: true, density: .4, gain: 0.7 },
+  waltz:     { bpm: 144, beats: 3, mode: 'major', root: 62, prog: [0, 4, 4, 0, 3, 0, 4, 0], repeat: 1, lead: 'pluck', bass: 'oompah', density: .6, gain: 1.6 },
+  tense:     { bpm: 128, beats: 4, mode: 'minor', root: 57, prog: [0, 0, 5, 4], lead: 'pizz', bass: 'ostinato', perc: 'tick', density: .5, staccato: true, gain: 1.55 },
+  triumph:   { bpm: 116, beats: 4, mode: 'major', root: 60, prog: [0, 3, 4, 0], lead: 'brass', bass: 'bounce', perc: 'drum', density: .6, leadVol: .07, gain: 1.35 },
+  night:     { bpm: 70,  beats: 4, mode: 'major', root: 60, prog: [0, 5, 3, 4], lead: 'musicbox', pad: true, density: .35, gain: 0.72 },
+  festive:   { bpm: 124, beats: 4, mode: 'mixolydian', root: 62, prog: [0, 6, 3, 0], lead: 'pluck', bass: 'bounce', perc: 'drum', density: .75, gain: 1.4 },
+};
+const AUTO_MOOD = { morning: 'gentle', day: 'playful', noon: 'sleepy', afternoon: 'gentle', festive: 'festive', spring: 'gentle', autumn: 'gentle', snow: 'night', beach: 'playful', dusk: 'night', night: 'night' };
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+function degNote(md, root, deg, oct = 0) { const sc = MODES[md] || MODES.major, n = sc.length, o = Math.floor(deg / n); return root + sc[((deg % n) + n) % n] + 12 * (o + oct); }
+function composeMood(spec, seed = 1) {
+  const m = Object.assign({}, MOODS[spec.mood] || MOODS.gentle, spec), r = rng(seed * 7919 + 13);
+  const B = m.beats, bars = m.prog.length * (m.repeat || 2), L = bars * B, ev = [], bassF = d => degNote(m.mode, m.root, d, -2);
+  let prev = 7;
+  for (let bar = 0; bar < bars; bar++) {
+    const ch = m.prog[bar % m.prog.length], t0 = bar * B, chord = [ch, ch + 2, ch + 4];
+    if (m.pad) ev.push({ t: t0, dur: B, inst: 'pad', notes: chord.map(d => degNote(m.mode, m.root, d, -1)), vol: .05 });
+    if (m.bass === 'soft') ev.push({ t: t0, dur: B, inst: 'bass', n: bassF(ch), vol: .13 });
+    if (m.bass === 'bounce') for (let b = 0; b < B; b++) ev.push({ t: t0 + b, dur: .45, inst: 'bass', n: bassF(b % 2 ? ch + 4 : ch), vol: .12 });
+    if (m.bass === 'walk') for (let b = 0; b < B; b++) ev.push({ t: t0 + b, dur: .5, inst: 'bass', n: bassF(chord[b % 3] + (b === 3 ? 1 : 0)), vol: .11 });
+    if (m.bass === 'oompah') { ev.push({ t: t0, dur: .8, inst: 'bass', n: bassF(ch), vol: .13 }); for (let b = 1; b < B; b++) ev.push({ t: t0 + b, dur: .4, inst: 'pluck', notes: chord.map(d => degNote(m.mode, m.root, d, -1)), vol: .04 }); }
+    if (m.bass === 'ostinato') for (let s = 0; s < B * 2; s++) ev.push({ t: t0 + s / 2, dur: .3, inst: 'bass', n: bassF(ch) + (s % 4 === 3 ? 12 : 0), vol: .09 });
+    if (m.arp) for (let s = 0; s < B * 2; s++) ev.push({ t: t0 + s / 2, dur: .5, inst: 'bell', n: degNote(m.mode, m.root, chord[s % 3] + (s >= B ? 7 : 0)), vol: .03 });
+    for (let s = 0; s < B * 2; s++) {
+      const strong = s % 2 === 0;
+      if (r() > (s === 0 ? .95 : strong ? m.density : m.density * .55)) continue;
+      if (strong && r() < .6) { const tg = chord.flatMap(d => [d + 7, d + 14]); prev = tg.reduce((a, b) => Math.abs(b - prev) < Math.abs(a - prev) ? b : a); }
+      else prev += Math.round((r() - .5) * 4) || 1;
+      prev = clamp(prev, 5, 15);
+      let len = 1; while (s + len < B * 2 && r() < (m.staccato ? .1 : .45)) len++;
+      ev.push({ t: t0 + s / 2, dur: m.staccato ? .35 : len / 2, inst: m.lead, n: degNote(m.mode, m.root, prev), vol: m.leadVol || .09 });
+    }
+    if (m.perc) for (let s = 0; s < B * 2; s++) { if (s % 2) ev.push({ t: t0 + s / 2, inst: 'tick', vol: .015 }); if (m.perc === 'drum' && s % 4 === 0) ev.push({ t: t0 + s / 2, inst: 'kick', vol: .16 }); }
+    if (m.sparkle && r() < .7) ev.push({ t: t0 + Math.floor(r() * B * 2) / 2, dur: 1, inst: 'bell', n: degNote(m.mode, m.root, chord[Math.floor(r() * 3)] + 14), vol: .035 });
+  }
+  ev.sort((a, b) => a.t - b.t);
+  return { ev, L, spb: 60 / m.bpm };
+}
+const NOISE = new WeakMap();
+function playVoice(ctx, out, e, t, spb) {
+  const dur = (e.dur || .5) * spb, v = e.vol || .1;
+  const env = (g, a, peak, d) => { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); };
+  const osc = (type, f, dest, det = 0) => { const o = ctx.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = det; o.connect(dest); o.start(t); return o; };
+  const lp = (f, dest) => { const b = ctx.createBiquadFilter(); b.type = 'lowpass'; b.frequency.value = f; b.connect(dest); return b; };
+  const g = ctx.createGain();
+  switch (e.inst) {
+    case 'pad': { g.connect(lp(900, out)); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + Math.min(.6, dur * .4)); g.gain.setValueAtTime(v, t + dur * .8); g.gain.linearRampToValueAtTime(.0001, t + dur + .5);
+      e.notes.forEach(n => [-7, 7].forEach(dt => osc('triangle', mtof(n), g, dt).stop(t + dur + .6))); break; }
+    case 'bass': { g.connect(out); env(g, .01, v, Math.max(.2, dur)); osc('triangle', mtof(e.n), g).stop(t + dur + .3); osc('sine', mtof(e.n), g).stop(t + dur + .3); break; }
+    case 'bell': case 'musicbox': { g.connect(out); const d = e.inst === 'bell' ? 1.6 : 1.0, f = mtof(e.n); env(g, .004, v, d); osc('sine', f, g).stop(t + d + .1);
+      const g2 = ctx.createGain(); g2.gain.value = e.inst === 'bell' ? .35 : .22; g2.connect(g); osc('sine', f * (e.inst === 'bell' ? 2.76 : 4), g2).stop(t + d); break; }
+    case 'piano': { g.connect(lp(2000, out)); env(g, .006, v, 1.6); const f = mtof(e.n); osc('triangle', f, g).stop(t + 1.8); const g2 = ctx.createGain(); g2.gain.value = .3; g2.connect(g); osc('sine', f * 2, g2).stop(t + 1.8); break; }
+    case 'brass': { g.connect(lp(1500, out)); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v * .7, t + .04); g.gain.setValueAtTime(v * .6, t + dur * .8); g.gain.linearRampToValueAtTime(.0001, t + dur + .08); osc('sawtooth', mtof(e.n), g).stop(t + dur + .1); break; }
+    case 'pizz': { g.connect(lp(1800, out)); env(g, .003, v, .22); osc('triangle', mtof(e.n), g).stop(t + .3); break; }
+    case 'tick': { let nb = NOISE.get(ctx); if (!nb) { nb = ctx.createBuffer(1, ctx.sampleRate * .05, ctx.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; NOISE.set(ctx, nb); }
+      const s = ctx.createBufferSource(); s.buffer = nb; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000; s.connect(hp).connect(g).connect(out); env(g, .001, v, .04); s.start(t); s.stop(t + .06); break; }
+    case 'kick': { g.connect(out); env(g, .002, v, .16); const o = osc('sine', 110, g); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(45, t + .12); o.stop(t + .2); break; }
+    default: { g.connect(lp(2600, out)); env(g, .006, v, Math.min(1.2, dur + .25)); (e.notes || [e.n]).forEach(n => osc('triangle', mtof(n), g).stop(t + dur + .5)); }
+  }
+}
+window.__BOOK_MUSIC = { composeMood, playVoice, MOODS };
+let musicOn = BOOK.music !== false, curTrack = null, musicBus = null, musicTimer = null;
+const AUDIO_SRC = new Map();
+function normSpec(m, seed) { if (m == null || m === false) return null; if (typeof m === 'string') m = m.startsWith('file:') ? { file: m.slice(5) } : { mood: m }; return Object.assign({ seed }, m); }
+function musicSpecFor() {
+  if (bookTarget < 1) return normSpec(BOOK.coverMusic ?? 'gentle', 99);
+  const i = cur(), S = SC[i], sc = SCN[i];
+  return (S && S.musicOverride) || normSpec(sc.music ?? AUTO_MOOD[sc.palette] ?? 'gentle', i + 1);
+}
+function stopTrack(tr, fade) {
+  if (!tr || !actx) return; const t = actx.currentTime; tr.dead = true;
+  tr.g.gain.cancelScheduledValues(t); tr.g.gain.setValueAtTime(Math.max(.0001, tr.g.gain.value), t); tr.g.gain.exponentialRampToValueAtTime(.0001, t + fade);
+  setTimeout(() => { try { tr.g.disconnect(); } catch (e) {} if (tr.el) tr.el.pause(); }, fade * 1000 + 300);
+}
+function startTrack(spec) {
+  const a = actx; if (!a) return;
+  if (!musicBus) { musicBus = a.createGain(); musicBus.gain.value = BOOK.musicVolume ?? .6; const comp = a.createDynamicsCompressor(); musicBus.connect(comp).connect(a.destination); }
+  const key = spec && musicOn ? JSON.stringify(spec) : '';
+  if ((curTrack ? curTrack.key : '') === key) return;
+  stopTrack(curTrack, .9); curTrack = null; if (!key) return;
+  const g = a.createGain(); g.gain.setValueAtTime(.0001, a.currentTime); const lvl = spec.file ? 1 : (spec.gain ?? (MOODS[spec.mood] || MOODS.gentle).gain ?? 1); g.gain.exponentialRampToValueAtTime(lvl, a.currentTime + 1.2); g.connect(musicBus);
+  let tr;
+  if (spec.file) {
+    const url = typeof BOOK_AUDIO !== 'undefined' ? BOOK_AUDIO[spec.file] : null; if (!url) { warnOnce(`music file "${spec.file}" not found in BOOK_AUDIO`); return; }
+    let rec = AUDIO_SRC.get(spec.file); if (!rec) { const el = new Audio(url); el.loop = true; rec = { el, src: a.createMediaElementSource(el) }; AUDIO_SRC.set(spec.file, rec); }
+    try { rec.src.disconnect(); } catch (e) {} rec.src.connect(g); rec.el.currentTime = 0; rec.el.play().catch(() => {});
+    tr = { key, g, el: rec.el };
+  } else tr = Object.assign({ key, g, start: a.currentTime + .08, k: 0, i: 0 }, composeMood(spec, spec.seed));
+  curTrack = tr; if (!musicTimer) musicTimer = setInterval(tickMusic, 50);
+}
+function tickMusic() {
+  const tr = curTrack; if (!tr || tr.el || !actx || actx.state !== 'running') return;
+  const now = actx.currentTime, hz = (now + .3 - tr.start) / tr.spb;
+  for (let guard = 0; guard < 400; guard++) {
+    const e = tr.ev[tr.i]; if (!e) break; const ab = tr.k * tr.L + e.t; if (ab >= hz) break;
+    const at = tr.start + ab * tr.spb; if (at >= now - .02) playVoice(actx, tr.g, e, at, tr.spb);
+    if (++tr.i >= tr.ev.length) { tr.i = 0; tr.k++; }
+  }
+}
+function syncMusic() { if (!actx || actx.state !== 'running') return; startTrack(musicOn ? musicSpecFor() : null); }
+
 /* ---- state + UI ---- */
 let bookT = 0, bookTarget = 0, kU = 0, phiOpen = (180 / N) * DEG, phiTarget = phiOpen, dragging = false, readerOn = false;
 const phiOf = k => (180 / N + 360 / N * k) * DEG;
@@ -952,7 +1065,7 @@ const dotsEl = $('dots');
 function setupUI() {
   document.title = BOOK.title; $('brandTitle').textContent = BOOK.title; $('brandSub').textContent = BOOK.subtitle || '';
   $('credit').textContent = BOOK.credit ? `© ${new Date().getFullYear()} ${BOOK.credit}` : ''; $('closeBtn').textContent = UI.close; $('rClose').textContent = UI.readerClose;
-  $('prev').setAttribute('aria-label', UI.prev); $('next').setAttribute('aria-label', UI.next); $('readBtn').setAttribute('aria-label', UI.read); $('soundBtn').setAttribute('aria-label', UI.sound);
+  $('prev').setAttribute('aria-label', UI.prev); $('next').setAttribute('aria-label', UI.next); $('readBtn').setAttribute('aria-label', UI.read); $('soundBtn').setAttribute('aria-label', UI.sound); $('musicBtn').setAttribute('aria-label', UI.music);
   SCN.forEach((s, i) => { const b = document.createElement('button'); b.setAttribute('aria-label', `${s.no} ${s.title}`); b.onclick = () => { if (bookTarget < 1) openBook(); goTo(kU + (((i - cur()) % N) + N + Math.floor(N / 2)) % N - Math.floor(N / 2)); }; dotsEl.appendChild(b); });
 }
 function updateUI() {
@@ -963,6 +1076,7 @@ function updateUI() {
   $('capTitle').textContent = open ? s.title : BOOK.title;
   $('capHint').textContent = open ? s.hint : UI.coverHint;
   $('actBtn').textContent = !open ? UI.open : (S && S.start != null ? UI.again : s.btn);
+  syncMusic();
   if (readerOn) { $('rNo').textContent = open ? `${s.no} · ${cur() + 1} / ${N}` : UI.cover; $('rTitle').textContent = open ? s.title : BOOK.title; $('rText').textContent = open ? s.text : (BOOK.intro || UI.coverReader); }
 }
 function openBook() { if (bookTarget === 1) return; bookTarget = 1; swish(); updateUI(); }
@@ -970,7 +1084,7 @@ function closeBook() { bookTarget = 0; swish(); updateUI(); }
 function goTo(k) { if (k === kU) return; kU = k; phiTarget = phiOf(kU); swish(); updateUI(); }
 function act() {
   if (bookTarget < 1) { openBook(); return; }
-  const S = SC[cur()]; S.start = performance.now() / 1000; S.fired = new Set();
+  const S = SC[cur()]; S.start = performance.now() / 1000; S.fired = new Set(); S.musicOverride = null;
   if (S.conf) S.conf.forEach(c => c.m.visible = false);
   (S.sc.action || []).forEach(st => { if (st._snap) st._snap = []; });
   melody(cur()); updateUI();
@@ -984,6 +1098,11 @@ function bindUI() {
   $('rClose').onclick = () => { readerOn = false; $('reader').hidden = true; $('readBtn').setAttribute('aria-pressed', 'false'); };
   $('soundBtn').onclick = () => { soundOn = !soundOn; $('soundBtn').setAttribute('aria-pressed', soundOn);
     $('muteX').style.display = soundOn ? 'none' : ''; $('waveA').style.display = $('waveB').style.display = soundOn ? '' : 'none'; if (soundOn) pluck(880, 0, .2); };
+  $('musicBtn').onclick = () => { musicOn = !musicOn; audio(); $('musicBtn').setAttribute('aria-pressed', musicOn); $('musicX').style.display = musicOn ? 'none' : ''; syncMusic(); };
+  if (!musicOn) { $('musicBtn').setAttribute('aria-pressed', 'false'); $('musicX').style.display = ''; }
+  const unlock = () => { if (!musicOn && !soundOn) return; const a = audio(); if (a) (a.state === 'running' ? Promise.resolve() : a.resume()).then(syncMusic); };
+  addEventListener('pointerdown', unlock, true); addEventListener('keydown', unlock, true);
+  document.addEventListener('visibilitychange', () => { if (!actx) return; if (document.hidden) actx.suspend(); else actx.resume().then(syncMusic); });
   addEventListener('keydown', e => {
     if (e.target.closest && e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
     if (e.key === 'ArrowRight') $('next').click(); else if (e.key === 'ArrowLeft') $('prev').click();
