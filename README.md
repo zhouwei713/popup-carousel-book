@@ -6,6 +6,8 @@
 
 > Turn any story into an interactive 3D paper-cut carousel pop-up book, as a single HTML file. Works as an Agent Skill in Claude, Claude Code, Codex and other agents that can read and write files.
 
+**在线演示**：[灰姑娘](http://blog.luobodazahui.top/popup-carousel-book/examples/cinderella.html) · [龟兔赛跑](http://blog.luobodazahui.top/popup-carousel-book/examples/tortoise-hare.html) · [全部示例](http://blog.luobodazahui.top/popup-carousel-book/)
+
 | 龟兔赛跑 | 灰姑娘 |
 |---|---|
 | ![龟兔赛跑封面](docs/images/tortoise-cover.jpg) | ![灰姑娘封面](docs/images/cinderella-cover.jpg) |
